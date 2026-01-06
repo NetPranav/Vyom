@@ -4,8 +4,15 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Menu, X, ArrowUpRight, LayoutGrid, ClipboardList } from 'lucide-react';
 
-export default function Navbar({Options1, Options2, Path1, Path2}) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+interface NavbarProps {
+  Options1: string;
+  Options2: string;
+  Path1: string;
+  Path2: string;
+}
+
+export default function Navbar({ Options1, Options2, Path1, Path2 }: NavbarProps) {
+const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
     <>
