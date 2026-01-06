@@ -1,6 +1,6 @@
 import React from 'react';
 
-const TransactionPage = () => {
+const TransactionPage = ({ transactions }) => {
   return (
     <div className="min-h-screen bg-white text-black font-mono p-8 border-4 border-black">
       {/* Header Section */}

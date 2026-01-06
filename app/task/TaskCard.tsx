@@ -37,6 +37,13 @@ const formatTimeAgo = (dateString: string) => {
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  // --- GLITCH FIX: Stop event from bubbling to parent card ---
+  const handleOpenPopup = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsPopupOpen(true);
+  };
   const budgetAmount = typeof task.budget === 'string'
     ? parseFloat(task.budget).toFixed(0)
     : task.budget;
@@ -111,23 +118,23 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       </div>
 
       {/* --- FOOTER --- */}
-      <button 
-  onClick={() => setIsPopupOpen(true)} // Link ki jagah Popup trigger karein
-  className="w-full bg-black text-white py-3 px-4 flex items-center justify-between group/btn hover:bg-gray-900 transition-colors shadow-[4px_4px_0px_rgba(0,0,0,1)] active:shadow-none"
->
-  <span className="font-mono text-sm font-bold uppercase tracking-widest">Details</span>
-  <div className="bg-white text-black p-1 rounded-sm group-hover/btn:translate-x-1 transition-transform">
-    <ArrowRight size={14} strokeWidth={3} />
-  </div>
-</button>
+      <button
+        onClick={() => setIsPopupOpen(true)} // Link ki jagah Popup trigger karein
+        className="w-full bg-black text-white py-3 px-4 flex items-center justify-between group/btn hover:bg-gray-900 transition-colors shadow-[4px_4px_0px_rgba(0,0,0,1)] active:shadow-none"
+      >
+        <span className="font-mono text-sm font-bold uppercase tracking-widest">Details</span>
+        <div className="bg-white text-black p-1 rounded-sm group-hover/btn:translate-x-1 transition-transform">
+          <ArrowRight size={14} strokeWidth={3} />
+        </div>
+      </button>
 
-{/* Detail Popup render */}
-<TaskDetailPopup 
-  task={task} 
-  isOpen={isPopupOpen} 
-  onClose={() => setIsPopupOpen(false)} 
-  onAccept={(id) => alert("Task Accepted: " + id)} 
-/>
+      {/* Detail Popup render */}
+      <TaskDetailPopup
+        task={task}
+        isOpen={isPopupOpen}
+        onClose={() => setIsPopupOpen(false)}
+        onAccept={(id) => alert("Task Accepted: " + id)}
+      />
     </div>
   );
 };
