@@ -1,8 +1,8 @@
 "use client"
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, IndianRupee, MapPin, Clock, ArrowRight, ShieldCheck, Zap, Info, Maximize2 } from 'lucide-react';
-import { Task } from './TaskCard'; // Path apne hisab se change karein
+import { X, IndianRupee, MapPin, Zap } from 'lucide-react';
+import { Task } from './TaskCard';
 
 interface TaskDetailPopupProps {
     task: Task;
@@ -12,138 +12,75 @@ interface TaskDetailPopupProps {
 }
 
 const TaskDetailPopup: React.FC<TaskDetailPopupProps> = ({ task, isOpen, onClose, onAccept }) => {
-    const budgetAmount = typeof task.budget === 'string'
-        ? parseFloat(task.budget).toFixed(0)
-        : task.budget;
+    // Esc key se close karne ke liye
+    React.useEffect(() => {
+        const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', handleEsc);
+        return () => window.removeEventListener('keydown', handleEsc);
+    }, [onClose]);
 
     return (
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-10">
-
-                    {/* --- BACKDROP: Glassmorphism style --- */}
+                <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+                    {/* Backdrop - Simple Fade */}
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-white/90 backdrop-blur-md"
+                        className="absolute inset-0 bg-white/80 backdrop-blur-sm"
                     />
 
-                    {/* --- POPUP CONTENT --- */}
+                    {/* Content - No Layout Glitch */}
                     <motion.div
-                        initial={{ scale: 0.9, opacity: 0, y: 30 }}
-                        animate={{ scale: 1, opacity: 1, y: 0 }}
-                        exit={{ scale: 0.9, opacity: 0, y: 30 }}
-                        className="relative w-full max-w-4xl bg-white border-[4px] border-black shadow-[20px_20px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row max-h-[90vh] overflow-hidden"
+                        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                        transition={{ duration: 0.2, ease: "easeOut" }}
+                        className="relative w-full max-w-4xl bg-white border-[4px] border-black shadow-[15px_15px_0px_0px_rgba(0,0,0,1)] flex flex-col md:flex-row max-h-[90vh] overflow-hidden"
                     >
+                        {/* Left: Image */}
+                        <div className="w-full md:w-1/2 h-64 md:h-auto bg-gray-100 border-b-[4px] md:border-b-0 md:border-r-[4px] border-black">
+                            {task.image ? (
+                                <img src={task.image} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center font-black text-gray-300">NO_IMAGE</div>
+                            )}
+                        </div>
 
-                        {/* --- LEFT SIDE: IMAGE (if exists) --- */}
-                        {task.image ? (
-                            <div className="w-full md:w-1/2 h-64 md:h-auto border-b-[4px] md:border-b-0 md:border-r-[4px] border-black bg-gray-100 relative">
-                                <img
-                                    src={task.image}
-                                    alt={task.title}
-                                    className="w-full h-full object-cover"
-                                />
-                                <div className="absolute bottom-4 left-4 bg-black text-white px-3 py-1 text-[10px] font-black uppercase tracking-widest italic">
-                                    Visual_Attachment_01
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="hidden md:flex w-1/2 bg-gray-50 items-center justify-center border-r-[4px] border-black">
-                                <div className="text-gray-200 uppercase font-black text-6xl rotate-90 tracking-tighter opacity-20 select-none pointer-events-none">
-                                    NO_MEDIA
-                                </div>
-                            </div>
-                        )}
-
-                        {/* --- RIGHT SIDE: CONTENT --- */}
-                        <div className="w-full md:w-1/2 flex flex-col p-6 md:p-10 overflow-y-auto custom-scrollbar">
-
-                            {/* Close Button */}
-                            <button
-                                onClick={onClose}
-                                className="absolute top-4 right-4 border-2 border-black p-1 hover:bg-black hover:text-white transition-colors z-20"
-                            >
+                        {/* Right: Info */}
+                        <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col overflow-y-auto">
+                            <button onClick={onClose} className="absolute top-4 right-4 border-2 border-black p-1 hover:bg-black hover:text-white transition-colors">
                                 <X size={20} strokeWidth={4} />
                             </button>
 
-                            {/* Tags & Status */}
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="bg-black text-white px-2 py-0.5 text-[10px] font-black uppercase tracking-widest italic">
-                                    {task.tags || "General"}
-                                </div>
-                                {task.priority === 'URGENT' && (
-                                    <span className="text-[10px] font-black text-red-600 uppercase tracking-widest animate-pulse">
-                                        ● Priority_Urgent
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Title */}
-                            <h2 className="text-5xl md:text-7xl font-black uppercase italic leading-[0.8] mb-8 tracking-tighter"
-                                style={{ fontFamily: 'serif' }}>
-                                {task.title}.
+                            <h2 className="text-5xl font-black uppercase italic leading-none mb-6 tracking-tighter" style={{ fontFamily: 'serif' }}>
+                                {task.title}
                             </h2>
 
-                            {/* Stats Box */}
-                            <div className="grid grid-cols-2 border-4 border-black divide-x-4 divide-black mb-8">
-                                <div className="p-4 flex flex-col bg-gray-50">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Total Payout</span>
-                                    <div className="flex items-center">
-                                        <IndianRupee size={20} strokeWidth={4} />
-                                        <span className="text-3xl font-black tracking-tighter">{budgetAmount}</span>
-                                    </div>
+                            <div className="grid grid-cols-2 border-2 border-black mb-6 divide-x-2 divide-black">
+                                <div className="p-3">
+                                    <span className="text-[10px] font-black uppercase block text-gray-400">Payout</span>
+                                    <span className="text-2xl font-black flex items-center"><IndianRupee size={16}/>{task.budget}</span>
                                 </div>
-                                <div className="p-4 flex flex-col">
-                                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">Time Elapsed</span>
-                                    <span className="text-xl font-black italic">NEW_POST</span>
+                                <div className="p-3">
+                                    <span className="text-[10px] font-black uppercase block text-gray-400">Location</span>
+                                    <span className="text-sm font-black truncate block">{task.location_string}</span>
                                 </div>
                             </div>
 
-                            {/* Description Section */}
-                            <div className="flex-grow mb-10">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Info size={14} strokeWidth={3} />
-                                    <h4 className="font-black uppercase tracking-widest text-[11px]">Mission Description</h4>
-                                </div>
-                                <div className="border-l-[6px] border-black pl-6 py-2">
-                                    <p className="font-mono text-xs md:text-sm leading-relaxed text-gray-700">
-                                        {task.description}
-                                    </p>
-                                </div>
-                            </div>
+                            <p className="font-mono text-xs leading-relaxed mb-8 flex-grow">{task.description}</p>
 
-                            {/* Location & Meta */}
-                            <div className="mb-10 bg-gray-100 border-2 border-black border-dashed p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <MapPin size={18} strokeWidth={3} />
-                                    <span className="font-black uppercase text-xs tracking-tight">{task.location_string || "Remote/Indore"}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-[10px] font-mono text-gray-400">
-                                    <Clock size={12} />
-                                    <span>ID: #{task.id}</span>
-                                </div>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="mt-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <button
+                            <div className="flex flex-col gap-3 mt-auto">
+                                <button 
                                     onClick={() => onAccept(task.id)}
-                                    className="bg-black text-white p-5 font-black uppercase text-xs flex items-center justify-center gap-3 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] hover:translate-x-[-2px] hover:translate-y-[-2px] transition-all group"
+                                    className="bg-black text-white p-4 font-black uppercase text-xs flex items-center justify-center gap-2 shadow-[4px_4px_0px_rgba(0,0,0,0.3)]"
                                 >
-                                    <Zap size={18} fill="white" className="group-hover:scale-125 transition-transform" />
-                                    Confirm Gig
+                                    <Zap size={16} fill="white" /> Accept Mission
                                 </button>
-                                <button
-                                    onClick={onClose}
-                                    className="border-4 border-black p-5 font-black uppercase text-xs hover:bg-gray-100 transition-colors"
-                                >
-                                    Decline
-                                </button>
+                                <button onClick={onClose} className="border-2 border-black p-4 font-black uppercase text-xs">Close</button>
                             </div>
-
                         </div>
                     </motion.div>
                 </div>

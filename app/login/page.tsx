@@ -4,13 +4,12 @@ import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle } from 'lucide-react';
 
 // Use Environment Variable (Fallback to localhost if missing)
-// NOTE: In Next.js Client Components, variables must start with NEXT_PUBLIC_
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 const LoginPage = () => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false); // New success state
+  const [isSuccess, setIsSuccess] = useState(false);
   
   const [formData, setFormData] = useState({
     username: '',
@@ -27,7 +26,6 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Use the dynamic API_URL
       const response = await fetch(`${API_URL}/api/login/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -41,18 +39,31 @@ const LoginPage = () => {
         localStorage.setItem('accessToken', data.access);
         localStorage.setItem('refreshToken', data.refresh);
         
-        // 2. Show Success UI
+        // 2. ✅ DECODE & SAVE USER ID (New Logic)
+        try {
+            // JWT format is Header.Payload.Signature
+            // We split by '.', take the 2nd part (Payload), decode Base64, and parse JSON
+            const payload = JSON.parse(atob(data.access.split('.')[1]));
+            
+            // Save the user_id so we can check "is_owner" later
+            localStorage.setItem('userId', payload.user_id);
+            
+            console.log("Logged in as User ID:", payload.user_id);
+        } catch (error) {
+            console.error("Failed to extract User ID from token:", error);
+        }
+
+        // 3. Show Success UI
         setIsSuccess(true);
         
-        // 3. Wait 1.5s then Redirect
+        // 4. Wait 1.5s then Redirect
         setTimeout(() => {
-            // FORCE RELOAD: Ensures Navbar updates instantly
             window.location.href = '/'; 
         }, 1500);
 
       } else {
         alert("Login Failed: " + (data.detail || "Invalid credentials"));
-        setIsLoading(false); // Only stop loading on error
+        setIsLoading(false); 
       }
     } catch (error) {
       console.error(error);
@@ -61,7 +72,7 @@ const LoginPage = () => {
     }
   };
 
-  // SUCCESS VIEW: Shows just before redirecting
+  // SUCCESS VIEW
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-white text-black font-mono flex flex-col items-center justify-center p-6 animate-in fade-in duration-500">

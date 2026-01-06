@@ -1,23 +1,24 @@
 import React from 'react';
 import { MapPin, Clock, ArrowRight, IndianRupee, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
-
+import { useState } from 'react';
+import TaskDetailPopup from './TaskDetails';
 // 1. Updated Interface to include 'image'
 export interface Task {
   id: number;
   title: string;
   description: string;
-  budget: string | number; 
-  tags: string;           
+  budget: string | number;
+  tags: string;
   priority: "STANDARD" | "URGENT";
-  location_string: string; 
+  location_string: string;
   created_at: string;
   status?: string;
   image?: string | null; // <--- ADDED THIS
 }
 
 interface TaskCardProps {
-  task: Task; 
+  task: Task;
 }
 
 const formatTimeAgo = (dateString: string) => {
@@ -35,14 +36,14 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
-  const [isPopupOpen, setIsPopupOpen] = React.useState(false);
-  const budgetAmount = typeof task.budget === 'string' 
-    ? parseFloat(task.budget).toFixed(0) 
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const budgetAmount = typeof task.budget === 'string'
+    ? parseFloat(task.budget).toFixed(0)
     : task.budget;
 
   return (
     <div className="group relative w-full max-w-[320px] bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all hover:-translate-y-1 hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-between h-auto">
-      
+
       {/* --- HEADER: Category & Priority --- */}
       <div className="flex justify-between items-start mb-4">
         <div className="inline-block border border-black px-2 py-0.5 text-[10px] font-mono uppercase tracking-widest bg-gray-50 truncate max-w-[120px]">
@@ -56,8 +57,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
           </div>
         ) : (
           <div className="flex items-center gap-1 opacity-50">
-             <div className="w-2 h-2 bg-gray-400 rounded-full" />
-             <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Standard</span>
+            <div className="w-2 h-2 bg-gray-400 rounded-full" />
+            <span className="text-[10px] font-bold uppercase text-gray-500 tracking-wider">Standard</span>
           </div>
         )}
       </div>
@@ -65,15 +66,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       {/* --- 🖼️ IMAGE SECTION (New) --- */}
       {task.image && (
         <div className="w-full h-40 mb-4 border-2 border-black overflow-hidden relative bg-gray-100">
-           {/* Image: Grayscale normally, Color on hover */}
-           <img 
-             src={task.image} 
-             alt="Task Attachment" 
-             className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
-           />
-           <div className="absolute top-2 right-2 bg-black text-white p-1">
-             <ImageIcon size={12} />
-           </div>
+          {/* Image: Grayscale normally, Color on hover */}
+          <img
+            src={task.image}
+            alt="Task Attachment"
+            className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500"
+          />
+          <div className="absolute top-2 right-2 bg-black text-white p-1">
+            <ImageIcon size={12} />
+          </div>
         </div>
       )}
 
@@ -102,7 +103,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
           <span className="text-[9px] font-black uppercase text-gray-400 tracking-wider mb-1">Location</span>
           <div className="flex items-center gap-1">
             <span className="text-xs font-bold uppercase truncate max-w-[100px]" title={task.location_string}>
-                {task.location_string || "Remote"}
+              {task.location_string || "Remote"}
             </span>
             <MapPin size={12} />
           </div>
@@ -110,23 +111,23 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
       </div>
 
       {/* --- FOOTER --- */}
-      <div className="mt-4">
-        <div className="flex justify-between items-center mb-3">
-             <div className="flex items-center gap-1 text-[10px] font-mono text-gray-400">
-                <Clock size={12} />
-                <span>Posted {formatTimeAgo(task.created_at)}</span>
-             </div>
-        </div>
+      <button 
+  onClick={() => setIsPopupOpen(true)} // Link ki jagah Popup trigger karein
+  className="w-full bg-black text-white py-3 px-4 flex items-center justify-between group/btn hover:bg-gray-900 transition-colors shadow-[4px_4px_0px_rgba(0,0,0,1)] active:shadow-none"
+>
+  <span className="font-mono text-sm font-bold uppercase tracking-widest">Details</span>
+  <div className="bg-white text-black p-1 rounded-sm group-hover/btn:translate-x-1 transition-transform">
+    <ArrowRight size={14} strokeWidth={3} />
+  </div>
+</button>
 
-        <Link href={`/tasks/${task.id}`}>
-            <button className="w-full bg-black text-white py-3 px-4 flex items-center justify-between group/btn hover:bg-gray-900 transition-colors">
-            <span className="font-mono text-sm font-bold uppercase tracking-widest">View Gig</span>
-            <div className="bg-white text-black p-1 rounded-sm group-hover/btn:translate-x-1 transition-transform">
-                <ArrowRight size={14} strokeWidth={3} />
-            </div>
-            </button>
-        </Link>
-      </div>
+{/* Detail Popup render */}
+<TaskDetailPopup 
+  task={task} 
+  isOpen={isPopupOpen} 
+  onClose={() => setIsPopupOpen(false)} 
+  onAccept={(id) => alert("Task Accepted: " + id)} 
+/>
     </div>
   );
 };

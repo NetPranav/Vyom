@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Search, Shield, Clock, Plus, Globe, Briefcase, User } from 'lucide-react'; // Added icons
 import gsap from 'gsap';
-import Navbar from '@/components/Navbar';
+import Navbar from '@/components/NavbarForOther';
 import axios from 'axios'; // Ensure you have axios installed: npm install axios
 
 // --- Interfaces for Type Safety ---
