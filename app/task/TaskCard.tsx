@@ -17,7 +17,7 @@ export interface TaskProps {
   timePosted?: string;
 }
 
-export default function TaskCard({ task }: { task: TaskProps }) {
+export default function TaskCard(task:TaskProps) {
   const isUrgent = task.priority === "URGENT";
 
   return (

@@ -48,13 +48,13 @@ export default function TaskFeed() {
   const [isPopupOpen, setIsPopupOpen] = useState(false); // State for popup
   const containerRef = useRef(null);
 
-  const TaskProps = {
+  const taskData = {
   id: 1,
   title: "Task Title",
   description: "Description of the task",
-  budget: "200",
+  budget: 200,
   category: "wood",
-  priority: "STANDARD",
+  priority: "STANDARD" as "STANDARD" | "URGENT",
   location: "Home",
   distance: "2km", // Optional, calculated by backend
   timePosted: '10 PM',
@@ -150,7 +150,7 @@ export default function TaskFeed() {
         <div className="legacy-reveal mt-12 w-full min-h-[500px] border-2 border-black border-dashed p-8 flex flex-col items-center justify-center text-center">
             {/* <h3 className="font-serif text-3xl italic font-bold mb-2">No Tasks Loaded</h3>
             <div className="divider-line w-24 h-1 bg-black mb-4"></div> */}
-            <TaskCard {...TaskProps} />
+            <TaskCard {...taskData} />
         </div>
 
       </div>
