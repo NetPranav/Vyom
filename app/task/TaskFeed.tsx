@@ -15,7 +15,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 // --- 3D ELEMENT ---
 const RetroWireframe = () => (
-  <Float speed={2} rotationIntensity={0.2} floatIntensity={0.2}>
+  <Float speed={5} rotationIntensity={5} floatIntensity={5}>
     <mesh scale={[1.5, 1.5, 1.5]}>
       <icosahedronGeometry args={[1.5, 1]} />
       <meshBasicMaterial color="black" wireframe />
