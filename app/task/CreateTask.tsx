@@ -1,29 +1,167 @@
-"use client"
-import { useState,useEffect } from 'react';
+"use client";
+
+import { useState, useEffect, useRef } from 'react';
 import { 
-  MapPin, 
-  Search, 
-  Plus, 
-  X, 
-  Camera, 
-  ArrowRight, 
-  AlertCircle, 
-  Tag, 
-  Navigation 
+  MapPin, X, Camera, ArrowRight, AlertCircle, Tag, Navigation, Loader2 
 } from 'lucide-react';
+import { gsap } from 'gsap';
+import { uploadImage } from '@/app/actions/upload'; // Import the action we made
+
+// Define the shape of data we send to Django
+interface TaskForm {
+  title: string;
+  description: string;
+  category: string; // This is 'tags' in backend
+  priority: "STANDARD" | "URGENT";
+  budget: string;
+  deadline: string;
+  estimated_duration: string;
+  contact_email: string;
+  primary_phone: string;
+  location_string: string;
+  latitude: number | null;
+  longitude: number | null;
+}
 
 const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const [priority, setPriority] = useState("MEDIUM");
+  // 1. Loading State
+  const [isLoading, setIsLoading] = useState(false);
   
+  // 2. Form State
+  const [form, setForm] = useState<TaskForm>({
+    title: "",
+    description: "",
+    category: "",
+    priority: "STANDARD",
+    budget: "",
+    deadline: "", // User picks date
+    estimated_duration: "",
+    contact_email: "",
+    primary_phone: "",
+    location_string: "",
+    latitude: null,
+    longitude: null,
+  });
+
+  // 3. Image State
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  // GSAP Animation
   useEffect(() => {
     if (isOpen) {
-      // Pop-in animation
       gsap.fromTo(".popup-inner", 
         { scale: 0.95, opacity: 0 }, 
         { scale: 1, opacity: 1, duration: 0.4, ease: "power4.out" }
       );
     }
   }, [isOpen]);
+
+  // Handle Text Inputs
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Handle Geolocation
+  const handleGeolocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setForm(prev => ({
+            ...prev,
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            location_string: "Pinned Location (GPS)" // Placeholder until user types address
+          }));
+          alert("Location Pinned! 📍");
+        },
+        (error) => alert("Could not get location. Please enable GPS.")
+      );
+    }
+  };
+
+  // Handle Image Selection
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedImage(file);
+      setPreviewUrl(URL.createObjectURL(file)); // Show preview instantly
+    }
+  };
+
+  // SUBMIT FORM
+  const handleSubmit = async () => {
+    // Basic Validation
+    if (!form.title || !form.budget || !form.primary_phone || !form.latitude) {
+      alert("Please fill all required fields and pin your location.");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      let imageUrl = "";
+
+      // Step A: Upload Image to Vercel Blob (if exists)
+      if (selectedImage) {
+        const formData = new FormData();
+        formData.append("file", selectedImage);
+        imageUrl = await uploadImage(formData); // Get the URL from Vercel
+      }
+
+      // Step B: Send Data to Django Backend
+      const token = localStorage.getItem("accessToken"); // Assuming you store JWT here
+
+      const payload = {
+        title: form.title,
+        description: form.description,
+        tags: form.category, // Backend expects 'tags'
+        priority: form.priority,
+        budget: parseFloat(form.budget),
+        deadline: form.deadline, // Ensure this matches ISO format in real app
+        estimated_duration: form.estimated_duration,
+        contact_email: form.contact_email,
+        primary_phone: form.primary_phone,
+        location_string: form.location_string,
+        latitude: form.latitude,
+        longitude: form.longitude,
+        // Backend handles image logic differently now? 
+        // NOTE: If backend expects a file object, we might need to tweak backend to accept URL.
+        // For now, assuming backend 'image' field can take a URL or we send it as a hidden text field.
+        // If your Django model strict on ImageField, we might need to send it differently.
+        // TRICK: Usually we send the URL in the 'description' or a specific 'image_url' field if ImageField is strict.
+        // Let's assume you added an 'image_url' field or we send it in body.
+      };
+
+      // Since Django ImageField expects a file, but we have a URL, 
+      // ideally, we should update Backend to have `image_url` (CharField).
+      // BUT for this code, we will construct a FormData to mimic standard submission if we weren't using Blob.
+      // Since we ARE using Blob, we send the URL.
+      
+      const response = await fetch("http://127.0.0.1:8000/api/tasks/create/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ ...payload, image_url: imageUrl }) // Send URL
+      });
+
+      if (response.ok) {
+        alert("Task Broadcasted Successfully! 🚀");
+        onClose();
+      } else {
+        const errorData = await response.json();
+        alert("Error: " + JSON.stringify(errorData));
+      }
+
+    } catch (error) {
+      console.error(error);
+      alert("Something went wrong.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -45,8 +183,10 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
             
             {/* Row 1: Title */}
             <div>
-                <label className="text-[10px] font-black uppercase mb-1 block tracking-widest">Task Title</label>
+                <label className="text-[10px] font-black uppercase mb-1 block tracking-widest">Task Title *</label>
                 <input 
+                    name="title"
+                    onChange={handleChange}
                     type="text" 
                     placeholder="E.G. FIX LEAKING PIPE" 
                     className="w-full border-2 border-black p-4 text-xl font-bold uppercase placeholder:text-gray-300 outline-none focus:bg-gray-50"
@@ -55,33 +195,29 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
             {/* Row 2: Category & Priority */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Category */}
                 <div>
                     <label className="text-[10px] font-black uppercase mb-1 block tracking-widest flex items-center gap-1">
-                        <Tag size={10} /> Category
+                        <Tag size={10} /> Category (Type freely)
                     </label>
-                    <div className="relative">
-                        <select className="w-full border-2 border-black p-3 font-bold uppercase appearance-none bg-transparent outline-none">
-                            <option>Manual Labor</option>
-                            <option>Tech Support</option>
-                            <option>Delivery</option>
-                            <option>Education</option>
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">▼</div>
-                    </div>
+                    <input 
+                        name="category"
+                        onChange={handleChange}
+                        type="text"
+                        placeholder="PLUMBING, CLEANING..."
+                        className="w-full border-2 border-black p-3 font-bold uppercase outline-none"
+                    />
                 </div>
 
-                {/* Priority */}
                 <div>
                     <label className="text-[10px] font-black uppercase mb-1 block tracking-widest flex items-center gap-1">
                         <AlertCircle size={10} /> Priority
                     </label>
                     <div className="flex border-2 border-black">
-                        {['LOW', 'MEDIUM', 'HIGH'].map((p) => (
+                        {['STANDARD', 'URGENT'].map((p) => (
                             <button 
                                 key={p}
-                                onClick={() => setPriority(p)}
-                                className={`flex-1 py-3 text-xs font-bold uppercase transition-colors ${priority === p ? 'bg-black text-white' : 'hover:bg-gray-100'}`}
+                                onClick={() => setForm({...form, priority: p as "STANDARD" | "URGENT"})}
+                                className={`flex-1 py-3 text-xs font-bold uppercase transition-colors ${form.priority === p ? 'bg-black text-white' : 'hover:bg-gray-100'}`}
                             >
                                 {p}
                             </button>
@@ -90,44 +226,114 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
                 </div>
             </div>
 
-            {/* Row 3: Location */}
-            <div>
-                <label className="text-[10px] font-black uppercase mb-1 block tracking-widest flex items-center gap-1">
-                    <MapPin size={10} /> Location
-                </label>
-                <div className="flex border-2 border-black focus-within:ring-2 ring-black/10">
+            {/* Row 3: Budget & Time */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="text-[10px] font-black uppercase mb-1 block tracking-widest">Budget (₹) *</label>
                     <input 
-                        type="text" 
-                        placeholder="ENTER ADDRESS MANUALLY..." 
-                        className="flex-1 p-3 font-bold uppercase outline-none placeholder:text-gray-300"
+                        name="budget"
+                        onChange={handleChange}
+                        type="number" 
+                        className="w-full border-2 border-black p-3 font-bold outline-none"
                     />
-                    <button className="bg-gray-100 px-4 border-l-2 border-black hover:bg-black hover:text-white transition-colors flex items-center gap-2 text-xs font-black uppercase">
-                        <Navigation size={14} /> 
-                        <span className="hidden sm:inline">Use My Location</span>
-                    </button>
+                </div>
+                <div>
+                    <label className="text-[10px] font-black uppercase mb-1 block tracking-widest">Deadline *</label>
+                    <input 
+                        name="deadline"
+                        onChange={handleChange}
+                        type="datetime-local" 
+                        className="w-full border-2 border-black p-3 font-bold outline-none uppercase"
+                    />
                 </div>
             </div>
 
-            {/* Row 4: Description */}
+            {/* Row 4: Contact Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label className="text-[10px] font-black uppercase mb-1 block tracking-widest">Phone *</label>
+                    <input 
+                        name="primary_phone"
+                        onChange={handleChange}
+                        type="tel" 
+                        placeholder="+91..."
+                        className="w-full border-2 border-black p-3 font-bold outline-none"
+                    />
+                </div>
+                <div>
+                    <label className="text-[10px] font-black uppercase mb-1 block tracking-widest">Email *</label>
+                    <input 
+                        name="contact_email"
+                        onChange={handleChange}
+                        type="email" 
+                        className="w-full border-2 border-black p-3 font-bold outline-none"
+                    />
+                </div>
+            </div>
+
+            {/* Row 5: Location */}
+            <div>
+                <label className="text-[10px] font-black uppercase mb-1 block tracking-widest flex items-center gap-1">
+                    <MapPin size={10} /> Location *
+                </label>
+                <div className="flex border-2 border-black focus-within:ring-2 ring-black/10">
+                    <input 
+                        name="location_string"
+                        onChange={handleChange}
+                        value={form.location_string}
+                        type="text" 
+                        placeholder="ENTER ADDRESS OR USE PIN..." 
+                        className="flex-1 p-3 font-bold uppercase outline-none placeholder:text-gray-300"
+                    />
+                    <button 
+                        onClick={handleGeolocation}
+                        className="bg-gray-100 px-4 border-l-2 border-black hover:bg-black hover:text-white transition-colors flex items-center gap-2 text-xs font-black uppercase"
+                    >
+                        <Navigation size={14} /> 
+                        <span className="hidden sm:inline">Pin GPS</span>
+                    </button>
+                </div>
+                {form.latitude && form.longitude && <p className="text-[10px] text-green-600 font-bold mt-1">✓ Coordinates Captured: {form.latitude.toFixed(4)}, {form.longitude.toFixed(4)}</p>}
+            </div>
+
+            {/* Row 6: Description */}
             <div>
                 <label className="text-[10px] font-black uppercase mb-1 block tracking-widest">Description</label>
                 <textarea 
+                    name="description"
+                    onChange={handleChange}
                     placeholder="PROVIDE DETAILED INSTRUCTIONS..." 
                     className="w-full border-2 border-black p-3 h-24 outline-none focus:bg-gray-50 uppercase font-bold text-sm resize-none"
                 />
             </div>
 
-            {/* Row 5: Image Upload */}
-            <div className="border-2 border-dashed border-black p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-all relative group">
-                <Camera size={32} className="mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-black uppercase text-xs tracking-widest underline">Click to Upload Photo</span>
-                <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" />
+            {/* Row 7: Image Upload */}
+            <div className="border-2 border-dashed border-black p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-all relative group overflow-hidden">
+                {previewUrl ? (
+                    <img src={previewUrl} alt="Preview" className="h-32 object-cover border-2 border-black" />
+                ) : (
+                    <>
+                        <Camera size={32} className="mb-2 group-hover:scale-110 transition-transform" />
+                        <span className="font-black uppercase text-xs tracking-widest underline">Click to Upload Photo</span>
+                    </>
+                )}
+                <input type="file" onChange={handleImageSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
             </div>
 
             {/* Action Button */}
-            <button className="w-full bg-black text-white p-5 font-black text-2xl uppercase italic tracking-tighter shadow-[8px_8px_0px_rgba(0,0,0,0.2)] hover:translate-y-1 transition-all flex items-center justify-between group border-2 border-black">
-                <span>Broadcast Task.</span>
-                <ArrowRight size={28} strokeWidth={3} className="group-hover:translate-x-2 transition-transform" />
+            <button 
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="w-full bg-black text-white p-5 font-black text-2xl uppercase italic tracking-tighter shadow-[8px_8px_0px_rgba(0,0,0,0.2)] hover:translate-y-1 transition-all flex items-center justify-between group border-2 border-black disabled:opacity-50"
+            >
+                {isLoading ? (
+                    <span className="flex items-center gap-2"><Loader2 className="animate-spin"/> Publishing...</span>
+                ) : (
+                    <>
+                        <span>Broadcast Task.</span>
+                        <ArrowRight size={28} strokeWidth={3} className="group-hover:translate-x-2 transition-transform" />
+                    </>
+                )}
             </button>
         </div>
       </div>
@@ -135,4 +341,4 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
   );
 };
 
-export default CreateTask
+export default CreateTask;

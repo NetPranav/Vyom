@@ -120,7 +120,15 @@ export default function NeoHelperDashboard() {
 }
 
 // Helper Components
-function StatBox({ label, value, last, hasIcon }) {
+
+interface StatBoxProps {
+  label: string;
+  value: string;
+  last?: boolean;
+  hasIcon?: boolean;
+}
+
+function StatBox({ label, value, last, hasIcon }: StatBoxProps) {
   return (
     <div className={`p-6 bg-white ${!last ? 'md:border-r-4 border-black border-b-4 md:border-b-0' : ''}`}>
       <p className="text-[10px] font-black uppercase text-gray-500 mb-2">{label}</p>
@@ -132,7 +140,13 @@ function StatBox({ label, value, last, hasIcon }) {
   );
 }
 
-function GigCard({ category, title, location }) {
+interface GigCardProps {
+  category: string;
+  title: string;
+  location: string;
+}
+
+function GigCard({ category, title, location }: GigCardProps) {
   return (
     <div className="border-4 border-black p-6 bg-white hover:bg-black hover:text-white transition-all cursor-pointer group">
        <div className="flex justify-between items-start mb-2">
@@ -145,7 +159,12 @@ function GigCard({ category, title, location }) {
   );
 }
 
-function MapPoint({ top, left }) {
+interface MapPointProps {
+  top: string;
+  left: string;
+}
+
+function MapPoint({ top, left }: MapPointProps) {
   return (
     <div className="absolute w-4 h-4 bg-white border-2 border-black group-hover:scale-125 transition-transform" style={{ top, left }}>
        <div className="w-1.5 h-1.5 bg-black m-0.5" />
