@@ -311,7 +311,7 @@ export default function Navbar() {
           {/* Action: Post Task */}
           {/* Optional: You might want to protect this too, or leave it to redirect to login */}
           <Link 
-            href="/create-task" 
+            href="/task" 
             className="hidden md:flex items-center gap-2 px-8 bg-black text-white font-mono text-xs font-bold uppercase tracking-widest hover:bg-gray-800 transition-colors"
           >
             Post <span className="hidden xl:inline">Task</span> <ArrowUpRight size={16} />
@@ -350,7 +350,7 @@ export default function Navbar() {
             </>
           )}
 
-          <Link href="/create-task" className="p-6 border-b border-black font-serif text-2xl font-bold hover:bg-black hover:text-white transition-colors flex justify-between items-center group">
+          <Link href="/task" className="p-6 border-b border-black font-serif text-2xl font-bold hover:bg-black hover:text-white transition-colors flex justify-between items-center group">
             Post a Request
             <ArrowUpRight className="opacity-0 group-hover:opacity-100 transition-opacity" />
           </Link>
