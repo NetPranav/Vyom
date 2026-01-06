@@ -10,10 +10,12 @@ export async function uploadImage(formData: FormData) {
     throw new Error("No file uploaded");
   }
 
-  // Upload to Vercel Blob
+  // Upload to your "vyom-blob-images" store
+  // access: 'public' means anyone can view the image URL (required for your app)
   const blob = await put(imageFile.name, imageFile, {
     access: "public",
   });
 
-  return blob.url; // Returns the public URL
+  // Return the public URL (e.g., https://k9d...vercel.app/image.jpg)
+  return blob.url; 
 }
