@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
 import CreateTask from '@/app/task/CreateTask';
+import TaskCard from '@/app/task/TaskCard';
 import { 
   MapPin, 
   Search, 
@@ -46,6 +47,18 @@ export default function TaskFeed() {
   const [radius, setRadius] = useState(5);
   const [isPopupOpen, setIsPopupOpen] = useState(false); // State for popup
   const containerRef = useRef(null);
+
+  const TaskProps = {
+  id: 1,
+  title: "Task Title",
+  description: "Description of the task",
+  budget: "200",
+  category: "wood",
+  priority: "STANDARD",
+  location: "Home",
+  distance: "2km", // Optional, calculated by backend
+  timePosted: '10 PM',
+}
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -135,12 +148,9 @@ export default function TaskFeed() {
 
         {/* --- FEED PLACEHOLDER (The "Newspaper" Slot) --- */}
         <div className="legacy-reveal mt-12 w-full min-h-[500px] border-2 border-black border-dashed p-8 flex flex-col items-center justify-center text-center">
-            <h3 className="font-serif text-3xl italic font-bold mb-2">No Tasks Loaded</h3>
-            <div className="divider-line w-24 h-1 bg-black mb-4"></div>
-            <p className="font-mono text-sm max-w-sm">
-                The component &lt;TaskCard /&gt; has not been mounted to the DOM. 
-                Use the fab button to generate new entries.
-            </p>
+            {/* <h3 className="font-serif text-3xl italic font-bold mb-2">No Tasks Loaded</h3>
+            <div className="divider-line w-24 h-1 bg-black mb-4"></div> */}
+            <TaskCard {...TaskProps} />
         </div>
 
       </div>
