@@ -18,10 +18,10 @@ export default function Footer() {
                 Join 120+ students and neighbors in Indore helping each other out.
             </p>
             <div className="flex gap-4">
-                <Link href="/create-task" className="bg-black text-white px-8 py-4 font-mono font-bold uppercase hover:bg-white hover:text-black border-2 border-black transition-colors">
+                <Link href="/task" className="bg-black text-white px-8 py-4 font-mono font-bold uppercase hover:bg-white hover:text-black border-2 border-black transition-colors">
                     Post a Task
                 </Link>
-                <Link href="/feed" className="bg-white text-black px-8 py-4 font-mono font-bold uppercase hover:bg-black hover:text-white border-2 border-black transition-colors">
+                <Link href="/task" className="bg-white text-black px-8 py-4 font-mono font-bold uppercase hover:bg-black hover:text-white border-2 border-black transition-colors">
                     Earn Money
                 </Link>
             </div>

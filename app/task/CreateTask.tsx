@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   MapPin, X, Camera, ArrowRight, AlertCircle, Tag, Navigation, Loader2 
 } from 'lucide-react';
 import { gsap } from 'gsap';
-import { uploadImage } from '@/app/actions/upload'; // Import the action we made
+import { uploadImage } from '@/app/actions/upload'; // Import your server action
 
-// Define the shape of data we send to Django
+// Define the shape of data for local state
 interface TaskForm {
   title: string;
   description: string;
-  category: string; // This is 'tags' in backend
+  category: string; 
   priority: "STANDARD" | "URGENT";
   budget: string;
   deadline: string;
@@ -34,8 +34,8 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     category: "",
     priority: "STANDARD",
     budget: "",
-    deadline: "", // User picks date
-    estimated_duration: "",
+    deadline: "", 
+    estimated_duration: "1 Hour", // Default value
     contact_email: "",
     primary_phone: "",
     location_string: "",
@@ -71,7 +71,7 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
             ...prev,
             latitude: position.coords.latitude,
             longitude: position.coords.longitude,
-            location_string: "Pinned Location (GPS)" // Placeholder until user types address
+            location_string: prev.location_string || "Pinned Location (GPS)" 
           }));
           alert("Location Pinned! 📍");
         },
@@ -90,8 +90,10 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
   };
 
   // SUBMIT FORM
+// ... inside CreateTask.tsx
+
   const handleSubmit = async () => {
-    // Basic Validation
+    // 1. Validation
     if (!form.title || !form.budget || !form.primary_phone || !form.latitude) {
       alert("Please fill all required fields and pin your location.");
       return;
@@ -100,51 +102,45 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     setIsLoading(true);
 
     try {
-      let imageUrl = "";
+      let finalImageUrl = "";
 
-      // Step A: Upload Image to Vercel Blob (if exists)
+      // 2. Upload Image
       if (selectedImage) {
         const formData = new FormData();
         formData.append("file", selectedImage);
-        imageUrl = await uploadImage(formData); // Get the URL from Vercel
+        finalImageUrl = await uploadImage(formData); 
       }
 
-      // Step B: Send Data to Django Backend
-      const token = localStorage.getItem("accessToken"); // Assuming you store JWT here
+      // 3. Prepare Payload
+      const token = localStorage.getItem("accessToken"); 
+
+      // FIX: Convert the local date string to a proper ISO UTC string
+      const formattedDeadline = new Date(form.deadline).toISOString();
 
       const payload = {
         title: form.title,
         description: form.description,
-        tags: form.category, // Backend expects 'tags'
+        tags: form.category,
         priority: form.priority,
         budget: parseFloat(form.budget),
-        deadline: form.deadline, // Ensure this matches ISO format in real app
+        deadline: formattedDeadline, // <--- SEND THE FORMATTED DATE
         estimated_duration: form.estimated_duration,
         contact_email: form.contact_email,
         primary_phone: form.primary_phone,
         location_string: form.location_string,
         latitude: form.latitude,
         longitude: form.longitude,
-        // Backend handles image logic differently now? 
-        // NOTE: If backend expects a file object, we might need to tweak backend to accept URL.
-        // For now, assuming backend 'image' field can take a URL or we send it as a hidden text field.
-        // If your Django model strict on ImageField, we might need to send it differently.
-        // TRICK: Usually we send the URL in the 'description' or a specific 'image_url' field if ImageField is strict.
-        // Let's assume you added an 'image_url' field or we send it in body.
+        image: finalImageUrl 
       };
 
-      // Since Django ImageField expects a file, but we have a URL, 
-      // ideally, we should update Backend to have `image_url` (CharField).
-      // BUT for this code, we will construct a FormData to mimic standard submission if we weren't using Blob.
-      // Since we ARE using Blob, we send the URL.
-      
+      // 4. Send JSON
       const response = await fetch("http://127.0.0.1:8000/api/tasks/create/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ ...payload, image_url: imageUrl }) // Send URL
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
@@ -157,12 +153,12 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
     } catch (error) {
       console.error(error);
-      alert("Something went wrong.");
+      alert("Something went wrong. Check console.");
     } finally {
       setIsLoading(false);
     }
   };
-
+  
   if (!isOpen) return null;
 
   return (
