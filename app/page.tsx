@@ -1,10 +1,10 @@
 import Image from "next/image";
-// import TaskFeed from "@/components/TaskFeed";
+import HomePage from "@/components/HomePage";
 
 export default function Home() {
   return (
     <>
-    {/* <TaskFeed/> */}
+    <HomePage/>
     </>
   );
 }

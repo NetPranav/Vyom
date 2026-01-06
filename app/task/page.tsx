@@ -1,5 +1,5 @@
 'use client';
-import TaskFeed from "@/components/TaskFeed";
+import TaskFeed from "./TaskFeed";
 
 export default function Home() {
     return (

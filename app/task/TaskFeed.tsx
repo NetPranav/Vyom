@@ -4,7 +4,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import gsap from 'gsap';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
-import { MapPin, Search, Plus } from 'lucide-react';
+import CreateTask from '@/app/task/CreateTask';
+import { 
+  MapPin, 
+  Search, 
+  Plus, 
+  X, 
+  Camera, 
+  ArrowRight, 
+  AlertCircle, 
+  Tag, 
+  Navigation 
+} from 'lucide-react';
 
 // --- 3D ELEMENT: RETRO WIREFRAME ---
 const RetroWireframe = () => {
@@ -21,15 +32,19 @@ const RetroWireframe = () => {
     <Float speed={2} rotationIntensity={0.2} floatIntensity={0.2}>
       <mesh ref={meshRef} scale={[1.5, 1.5, 1.5]}>
         <icosahedronGeometry args={[1.5, 1]} />
-        {/* Wireframe is the key to the 'Legacy' look */}
         <meshBasicMaterial color="black" wireframe />
       </mesh>
     </Float>
   );
 };
 
+// --- COMPONENT: CREATE TASK POPUP ---
+
+
+// --- MAIN PAGE COMPONENT ---
 export default function TaskFeed() {
   const [radius, setRadius] = useState(5);
+  const [isPopupOpen, setIsPopupOpen] = useState(false); // State for popup
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -43,7 +58,7 @@ export default function TaskFeed() {
         ease: "power2.out" 
       });
       
-      // Draw lines animation (optional flair)
+      // Draw lines animation
       gsap.from(".divider-line", { scaleX: 0, duration: 1, delay: 0.5, ease: "power3.inOut" });
     }, containerRef);
 
@@ -51,7 +66,7 @@ export default function TaskFeed() {
   }, []);
 
   return (
-    <div ref={containerRef} className="min-h-screen bg-white text-black font-serif selection:bg-black selection:text-white">
+    <div ref={containerRef} className="min-h-screen bg-white text-black font-serif selection:bg-black selection:text-white relative">
       
       {/* --- HERO SECTION --- */}
       <div className="w-full border-b-4 border-black">
@@ -132,11 +147,17 @@ export default function TaskFeed() {
 
       {/* --- FAB (Square, brutalist) --- */}
       <div className="fixed bottom-8 right-8 z-50">
-        <button className="bg-black text-white w-16 h-16 md:w-auto md:h-auto md:px-8 md:py-4 flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(255,255,255,1),8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1),4px_4px_0px_0px_rgba(0,0,0,1)] transition-all border-2 border-black">
+        <button 
+            onClick={() => setIsPopupOpen(true)}
+            className="bg-black text-white w-16 h-16 md:w-auto md:h-auto md:px-8 md:py-4 flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(255,255,255,1),8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(255,255,255,1),4px_4px_0px_0px_rgba(0,0,0,1)] transition-all border-2 border-black"
+        >
             <Plus size={24} strokeWidth={3} />
             <span className="hidden md:block font-mono font-bold uppercase tracking-wider">Post Task</span>
         </button>
       </div>
+
+      {/* --- POPUP INTEGRATION --- */}
+      <CreateTask isOpen={isPopupOpen} onClose={() => setIsPopupOpen(false)} />
 
     </div>
   );
