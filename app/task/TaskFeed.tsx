@@ -43,6 +43,7 @@ export default function TaskFeed() {
 
   // 1. Fetch Tasks
   const fetchTasks = async (query = "") => {
+    console.log("hello")
     setLoading(true);
     try {
       const url = `${API_URL}/api/tasks/?search=${query}`;

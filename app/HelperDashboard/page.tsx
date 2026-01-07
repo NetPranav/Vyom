@@ -1,12 +1,12 @@
 "use client"
 import React, { useEffect, useState } from 'react';
-import { Search, Shield, Clock, Plus, Globe, Briefcase, User, Phone, CheckCircle, X, Mail, AlertTriangle, Loader2 } from 'lucide-react';
+import { Search, Shield, Clock, Plus, Globe, Briefcase, User, Phone, CheckCircle, X, Mail, AlertTriangle, Loader2, QrCode } from 'lucide-react';
 import gsap from 'gsap';
 import Navbar from '@/components/NavbarForOther';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
 
-// --- Interfaces ---
+// --- Interfaces Matching Your Backend ---
 interface UserProfile {
     username: string;
     trust_score: number;
@@ -20,16 +20,16 @@ interface Task {
     id: number;
     title: string;
     location_string: string;
-    status: "OPEN" | "ASSIGNED" | "IN_REVIEW" | "COMPLETED"; // Added IN_REVIEW
+    status: "OPEN" | "ASSIGNED" | "IN_REVIEW" | "COMPLETED"; 
     budget: string;
     
-    // Assignee Info
+    // Assignee Info (Ensure your serializer sends these!)
     assignee_name?: string;
     assignee_phone?: string;
-    assignee_email?: string; // Added Email
+    assignee_email?: string; 
     
     // Logic flags
-    is_submitted_by_helper?: boolean; // True if helper clicked "Mark Completed"
+    is_submitted_by_helper?: boolean; 
 }
 
 export default function NeoHelperDashboard() {
@@ -43,8 +43,12 @@ export default function NeoHelperDashboard() {
     const [loading, setLoading] = useState(true);
 
     // Modal State
-    const [selectedTask, setSelectedTask] = useState<Task | null>(null); // For Owner Review
+    const [selectedTask, setSelectedTask] = useState<Task | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    
+    // QR Modal State
+    const [showQR, setShowQR] = useState(false);
+    const [qrTask, setQrTask] = useState<Task | null>(null);
 
     function getInitials(name: string | undefined) {
         return name ? name.charAt(0).toUpperCase() : "U";
@@ -54,12 +58,14 @@ export default function NeoHelperDashboard() {
     const fetchData = async () => {
         try {
             const token = localStorage.getItem('accessToken');
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL; // Safety fallback
+
             if (!token) {
                 router.push('/login');
                 return;
             }
 
-            const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/data/`, {
+            const response = await axios.get(`${apiUrl}/api/dashboard/data/`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -93,15 +99,15 @@ export default function NeoHelperDashboard() {
     // 1. HELPER: Mark Task as Completed
     const handleHelperMarkComplete = async (taskId: number) => {
         const token = localStorage.getItem('accessToken');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL ;
         try {
-            // Call API to update status to "IN_REVIEW"
-            await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/submit/`, {}, {
+            await axios.post(`${apiUrl}/api/tasks/${taskId}/submit/`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert("Work Submitted! Waiting for owner verification.");
-            fetchData(); // Refresh data
+            fetchData(); 
         } catch (error) {
-            alert("Failed to submit work.");
+            alert("Failed to submit work. Please try again.");
         }
     };
 
@@ -109,19 +115,18 @@ export default function NeoHelperDashboard() {
     const handleOwnerVerify = async (taskId: number, decision: 'approve' | 'reject') => {
         setIsProcessing(true);
         const token = localStorage.getItem('accessToken');
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         try {
             if (decision === 'approve') {
-                // Endpoint to mark as COMPLETED and pay user
-                await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/approve/`, {}, {
+                await axios.post(`${apiUrl}/api/tasks/${taskId}/approve/`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                alert("Task Verified & Closed!");
+                alert("Task Verified & Closed! Funds released.");
             } else {
-                // Endpoint to reset task to OPEN and penalize user
-                await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}/reject/`, {}, {
+                await axios.post(`${apiUrl}/api/tasks/${taskId}/reject/`, {}, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                alert("Work Rejected. Task is now OPEN again.");
+                alert("Work Rejected. Task has been reset to OPEN.");
             }
             setSelectedTask(null);
             fetchData();
@@ -148,7 +153,6 @@ export default function NeoHelperDashboard() {
                     <h1 className="header-text text-6xl md:text-9xl font-black leading-[0.85] uppercase italic tracking-tighter" style={{ fontFamily: 'serif' }}>
                         HELPER<br />DASHBOARD.
                     </h1>
-                    {/* Profile Section */}
                     <div className="mt-8 flex items-center gap-4 border-l-4 border-black pl-6 py-2 bg-gray-50 max-w-md">
                         <div className="relative w-16 h-16 shrink-0">
                             <div className="w-full h-full rounded-full border-[3px] border-black bg-black text-white flex items-center justify-center text-3xl font-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)] overflow-hidden">
@@ -200,6 +204,10 @@ export default function NeoHelperDashboard() {
                                         task={task}
                                         isMyTask={true}
                                         onHelperAction={() => handleHelperMarkComplete(task.id)}
+                                        onPaymentClick={() => {
+                                            setQrTask(task);
+                                            setShowQR(true);
+                                        }}
                                     />
                                 ))}
                             </div>
@@ -222,8 +230,8 @@ export default function NeoHelperDashboard() {
                                     task={task}
                                     isMyTask={false}
                                     onCardClick={() => {
-                                        // Only open detailed modal if assigned or in review
-                                        if (task.status === 'ASSIGNED' || task.status === 'IN_REVIEW') {
+                                        // Open modal if assigned/review, OR if completed (to see history)
+                                        if (['ASSIGNED', 'IN_REVIEW', 'COMPLETED'].includes(task.status)) {
                                             setSelectedTask(task);
                                         }
                                     }}
@@ -246,6 +254,14 @@ export default function NeoHelperDashboard() {
                     isProcessing={isProcessing}
                 />
             )}
+
+            {/* --- MODAL: QR CODE --- */}
+            {showQR && qrTask && (
+                <PaymentQRModal 
+                    onClose={() => setShowQR(false)}
+                    gigId={qrTask.id}
+                />
+            )}
             
             <div className="fixed bottom-6 left-6 w-12 h-12 bg-black rounded-full flex items-center justify-center text-white font-black text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">N</div>
         </div>
@@ -266,16 +282,16 @@ function StatBox({ label, value, last, hasIcon }: any) {
     );
 }
 
-// ✅ UPDATED GIG CARD
 interface GigCardProps {
     task: Task;
     isMyTask: boolean;
     onHelperAction?: () => void;
     onCardClick?: () => void;
+    onPaymentClick?: () => void;
 }
 
-function GigCard({ task, isMyTask, onHelperAction, onCardClick }: GigCardProps) {
-    const isClickable = !isMyTask && (task.status === 'ASSIGNED' || task.status === 'IN_REVIEW');
+function GigCard({ task, isMyTask, onHelperAction, onCardClick, onPaymentClick }: GigCardProps) {
+    const isClickable = !isMyTask && (task.status === 'ASSIGNED' || task.status === 'IN_REVIEW' || task.status === 'COMPLETED');
 
     return (
         <div 
@@ -287,6 +303,7 @@ function GigCard({ task, isMyTask, onHelperAction, onCardClick }: GigCardProps) 
                 <span className={`text-[9px] font-black uppercase border-2 border-black px-2 py-0.5 
                     ${task.status === 'OPEN' ? 'bg-yellow-200 text-black' : 
                       task.status === 'IN_REVIEW' ? 'bg-blue-600 text-white animate-pulse' :
+                      task.status === 'COMPLETED' ? 'bg-green-800 text-white' :
                       task.status === 'ASSIGNED' ? 'bg-green-600 text-white' : 'bg-gray-200'}`}>
                     {task.status.replace('_', ' ')}
                 </span>
@@ -302,7 +319,7 @@ function GigCard({ task, isMyTask, onHelperAction, onCardClick }: GigCardProps) 
                 {task.location_string}
             </p>
 
-            {/* --- HELPER VIEW: Mark Complete Button --- */}
+            {/* --- HELPER VIEW --- */}
             {isMyTask && task.status === 'ASSIGNED' && (
                 <div className="mt-4 pt-4 border-t-2 border-black border-dashed">
                     <button 
@@ -320,8 +337,18 @@ function GigCard({ task, isMyTask, onHelperAction, onCardClick }: GigCardProps) 
                     </p>
                  </div>
             )}
+            {isMyTask && task.status === 'COMPLETED' && (
+                 <div className="mt-4 pt-4 border-t-2 border-black border-dashed">
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onPaymentClick && onPaymentClick(); }}
+                        className="w-full bg-black text-white border-2 border-black py-2 font-black uppercase text-xs shadow-[4px_4px_0px_0px_black] hover:translate-y-1 hover:shadow-none hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
+                    >
+                        <QrCode size={14} /> View Payment QR
+                    </button>
+                 </div>
+            )}
 
-            {/* --- OWNER VIEW: Small Hint --- */}
+            {/* --- OWNER VIEW --- */}
             {!isMyTask && task.status === 'IN_REVIEW' && (
                  <div className="mt-4 pt-4 border-t-2 border-black border-dashed">
                     <p className="text-xs font-black text-red-600 uppercase flex items-center gap-2 animate-bounce">
@@ -333,7 +360,6 @@ function GigCard({ task, isMyTask, onHelperAction, onCardClick }: GigCardProps) 
     );
 }
 
-// ✅ NEW MODAL: OWNER REVIEW & DETAILS
 interface ModalProps {
     task: Task;
     onClose: () => void;
@@ -378,15 +404,14 @@ function OwnerReviewModal({ task, onClose, onAction, isProcessing }: ModalProps)
 
                 {/* --- ACTION SECTION --- */}
                 <div className="text-center">
-                    {task.status === 'IN_REVIEW' || task.is_submitted_by_helper ? (
+                    {(task.status === 'IN_REVIEW' || task.is_submitted_by_helper) ? (
                         <>
                             <div className="bg-yellow-100 p-3 border-2 border-black mb-4 flex items-center gap-3">
                                 <AlertTriangle className="text-yellow-600" />
                                 <p className="text-left text-xs font-bold uppercase leading-tight">
-                                    Operative marked this task as complete. Verify the work before releasing funds.
+                                    Operative marked task as complete. Verify work before releasing funds.
                                 </p>
                             </div>
-                            
                             <div className="grid grid-cols-2 gap-4">
                                 <button 
                                     disabled={isProcessing}
@@ -407,16 +432,43 @@ function OwnerReviewModal({ task, onClose, onAction, isProcessing }: ModalProps)
                                 </button>
                             </div>
                         </>
+                    ) : task.status === 'COMPLETED' ? (
+                        <div className="p-4 bg-green-100 border-2 border-green-800 text-green-800 font-bold uppercase">
+                            Task Successfully Closed
+                        </div>
                     ) : (
                         <div className="border-2 border-dashed border-gray-300 p-4 text-gray-400">
                             <Clock className="mx-auto mb-2" />
                             <p className="text-xs font-bold uppercase">Work in Progress</p>
-                            <p className="text-[10px] uppercase">You can verify once the operative submits the work.</p>
+                            <p className="text-[10px] uppercase">Verify once the operative submits the work.</p>
                         </div>
                     )}
                 </div>
-
             </div>
         </div>
     );
+}
+
+function PaymentQRModal({ onClose, gigId }: { onClose: () => void, gigId: number | null }) {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white border-[3px] border-black p-8 max-w-sm w-full shadow-[16px_16px_0px_0px_rgba(255,255,255,0.2)] relative">
+                <button onClick={onClose} className="absolute top-4 right-4 bg-black text-white p-1 hover:bg-red-600 transition-colors">
+                    <X size={20} />
+                </button>
+                <div className="text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-yellow-300 border-[3px] border-black rounded-full mb-6 shadow-[4px_4px_0px_0px_black]">
+                        <QrCode size={32} />
+                    </div>
+                    <h2 className="text-2xl font-black uppercase mb-2">Payment Receipt</h2>
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-6">Gig ID: #{gigId}</p>
+                    <div className="border-[3px] border-black p-4 bg-gray-50 mb-6 flex justify-center">
+                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=PaymentForGig_${gigId}`} alt="Payment QR" className="w-40 h-40 mix-blend-multiply" />
+                    </div>
+                    <p className="text-[10px] font-bold uppercase mb-6 text-center leading-relaxed">Scan to verify payment.</p>
+                    <button onClick={onClose} className="w-full bg-black text-white py-3 font-black uppercase text-sm hover:bg-green-600 transition-colors">Done</button>
+                </div>
+            </div>
+        </div>
+    )
 }
