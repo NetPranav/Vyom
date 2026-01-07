@@ -120,8 +120,7 @@ export default function Footer() {
         <div className="flex items-center gap-2">
             <span>MADE WITH</span>
             <Heart size={10} className="text-red-500 fill-current" />
-            <span>IN INDORE</span>
-            <MapPin size={10} className="ml-1" />
+            <span>BY VYOM</span>
         </div>
       </div>
 
