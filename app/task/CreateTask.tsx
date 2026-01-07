@@ -23,7 +23,7 @@ interface TaskForm {
   longitude: number | null;
 }
 
-const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+const CreateTask = ({ isOpen, onClose, fetchTask }: { isOpen: boolean; onClose: () => void; fetchTask: (query?: string) => Promise<void>;}) => {
   // 1. Loading State
   const [isLoading, setIsLoading] = useState(false);
   
@@ -89,8 +89,9 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     }
   };
 
+
   // SUBMIT FORM
-// ... inside CreateTask.tsx
+// ... inside CreateTask.ts
 
   const handleSubmit = async () => {
     // 1. Validation
@@ -145,6 +146,7 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
 
       if (response.ok) {
         alert("Task Broadcasted Successfully! 🚀");
+        fetchTask();
         onClose();
       } else {
         const errorData = await response.json();
