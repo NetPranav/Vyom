@@ -182,9 +182,9 @@ export default function TaskFeed() {
       {isCreateOpen && (
         <CreateTask
           isOpen={isCreateOpen}
+          fetchTask={fetchTasks}
           onClose={() => {
             setIsCreateOpen(false);
-            fetchTasks(searchQuery);
           }}
         />
       )}
