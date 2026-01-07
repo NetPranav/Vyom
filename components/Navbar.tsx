@@ -170,12 +170,12 @@ export default function Navbar() {
           {/* --- MOBILE PROTECTED ROUTES --- */}
           {user && (
             <>
-              <Link href="/feed" className="p-6 border-b border-black font-serif text-2xl font-bold hover:bg-black hover:text-white transition-colors flex justify-between items-center group">
+              <Link href="/task" className="p-6 border-b border-black font-serif text-2xl font-bold hover:bg-black hover:text-white transition-colors flex justify-between items-center group">
                 Task Feed
                 <ArrowUpRight className="opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
 
-              <Link href="/dashboard" className="p-6 border-b border-black font-serif text-2xl font-bold hover:bg-black hover:text-white transition-colors flex justify-between items-center group">
+              <Link href="/HelperDashboard" className="p-6 border-b border-black font-serif text-2xl font-bold hover:bg-black hover:text-white transition-colors flex justify-between items-center group">
                 Helper Dashboard
                 <ArrowUpRight className="opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
