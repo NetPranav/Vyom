@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle } from 'lucide-react';
 
 // Use Environment Variable (Fallback to localhost if missing)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const LoginPage = () => {
   const router = useRouter();

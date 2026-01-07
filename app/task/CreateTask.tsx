@@ -134,7 +134,7 @@ const CreateTask = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
       };
 
       // 4. Send JSON
-      const response = await fetch("http://127.0.0.1:8000/api/tasks/create/", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/create/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

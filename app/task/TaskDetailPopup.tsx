@@ -27,7 +27,7 @@ const TaskDetailPopup: React.FC<TaskDetailPopupProps> = ({ task, isOpen, onClose
         try {
             const token = localStorage.getItem('accessToken');
             // Call the NEW backend endpoint
-            await axios.post(`http://127.0.0.1:8000/api/tasks/${task.id}/claim/`, {}, {
+            await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${task.id}/claim/`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             

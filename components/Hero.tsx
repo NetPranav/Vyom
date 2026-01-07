@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import gsap from 'gsap';
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { Canvas, useFrame } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
 import { ArrowRight, Globe, ArrowDown, MapPin } from 'lucide-react';
@@ -31,6 +32,14 @@ const RetroWireframe = () => {
 
 export default function Hero() {
   const containerRef = useRef(null);
+
+    function handleArrowDownCLick(){
+    gsap.to(window, {
+      duration: 1,
+      scrollTo: { y: "+=200", autoKill: true },
+      ease: "power2.out"
+    });
+  }
 
   // GSAP Animations
   useEffect(() => {
@@ -152,7 +161,7 @@ export default function Hero() {
       </div>
       
       {/* Scroll Indicator (Absolute Bottom) */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 bg-white border-2 border-black rounded-full p-2 animate-bounce hidden md:block z-20">
+      <div onClick={handleArrowDownCLick} className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 bg-white border-2 border-black rounded-full p-2 animate-bounce hidden md:block z-20">
         <ArrowDown size={20} />
       </div>
     </section>
