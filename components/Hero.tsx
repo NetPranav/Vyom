@@ -111,7 +111,7 @@ export default function Hero() {
                 <span>Post Request</span>
                 <ArrowRight className="group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/feed" className="flex items-center justify-center gap-4 px-8 py-4 font-mono font-bold uppercase border-2 border-black hover:bg-black hover:text-white transition-all">
+              <Link href="/task" className="flex items-center justify-center gap-4 px-8 py-4 font-mono font-bold uppercase border-2 border-black hover:bg-black hover:text-white transition-all">
                 Browse Feed
               </Link>
             </div>
